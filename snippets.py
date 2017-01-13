@@ -17,7 +17,7 @@ def put(name, snippet):
     logging.info("Storing snippet {!r}: {!r}".format(name,snippet))
     cursor = connection.cursor()
     command = "insert into snippets values ({!r}, {!r})".format(name, snippet)
-    cursor.execute(command, (name, snippet))
+    cursor.execute(command)
     connection.commit()
     logging.debug("Snippet stored successfully.")
     return name, snippet
@@ -31,8 +31,8 @@ def get(name):
     """
     logging.info("Getting snippet information {!r}".format(name))
     cursor = connection.cursor()
-    command = "select * from snippets where keyword='%s'"
-    cursor.execute("select keyword, message from snippets where keyword={!r}".format(name))
+    command = "select keyword, message from snippets where keyword={!r}".format(name)
+    cursor.execute(command)
     snippet = cursor.fetchone()
     logging.debug("Snippet pulled successfully")
     return snippet
