@@ -15,15 +15,14 @@ def put(name, snippet):
     Returns the name and the snippet
     """
     logging.info("Storing snippet {!r}: {!r}".format(name,snippet))
-    cursor = connection.cursor()
-    try:
-        command = "insert into snippets values ({!r}, {!r})".format(name, snippet)
-        cursor.execute(command)
-    except psycopg2.IntegrityError as e:
-        connection.rollback()
-        command = "update snippets set message={!r} where keyword={!r}".format(snippet, name)
-        cursor.execute(command)
-    connection.commit()
+    with connection, connection.cursor() as cursor:
+        try:
+            command = "insert into snippets values ({!r}, {!r})".format(name, snippet)
+            cursor.execute(command)
+        except psycopg2.IntegrityError as e:
+            connection.rollback()
+            command = "update snippets set message={!r} where keyword={!r}".format(snippet, name)
+            cursor.execute(command)
     logging.debug("Snippet stored successfully.")
     return name, snippet
     
@@ -35,10 +34,11 @@ def get(name):
     Returns the snippet.
     """
     logging.info("Getting snippet information {!r}".format(name))
-    cursor = connection.cursor()
-    command = "select keyword, message from snippets where keyword={!r}".format(name)
-    cursor.execute(command)
-    snippet = cursor.fetchone()
+    
+    
+    with connection, connection.cursor() as cursor:
+        cursor.execute("select keyword, message from snippets where keyword={!r}".format(name))
+        snippet = cursor.fetchone()
     logging.debug("Snippet pulled successfully")
     if not snippet:
         # No snippet was found with that name.
