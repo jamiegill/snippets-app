@@ -35,7 +35,10 @@ def get(name):
     cursor.execute(command)
     snippet = cursor.fetchone()
     logging.debug("Snippet pulled successfully")
-    return snippet
+    if not snippet:
+        # No snippet was found with that name.
+        return "404: Snippet not Found"
+    return snippet[1]
     
 def main():
     """Main function"""
