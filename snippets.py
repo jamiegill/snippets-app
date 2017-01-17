@@ -19,7 +19,7 @@ def put(name, snippet):
         try:
             command = "insert into snippets values ({!r}, {!r})".format(name, snippet)
             cursor.execute(command)
-        except psycopg2.IntegrityError as e:
+        except psycopg2.IntegrityError:
             connection.rollback()
             command = "update snippets set message={!r} where keyword={!r}".format(snippet, name)
             cursor.execute(command)
@@ -45,6 +45,22 @@ def get(name):
         return "404: Snippet not Found"
     return snippet[1]
     
+def search(name):
+    """ Search for snippets using message content as the search string """
+    logging.info("Searching for {!r}".format(name))
+    with connection, connection.cursor() as cursor:
+        cursor.execute("select * from snippets where message like '%{}%'".format(name))
+        name = cursor.fetchall()
+        return name
+    
+def catalog():
+    """ Display catalog of snippets if no argument is given """
+    with connection, connection.cursor() as cursor:
+        cursor.execute("select keyword from snippets order by keyword")
+        rows = cursor.fetchall()
+    logging.debug("Catalog pulled successfully")
+    return rows
+    
 def main():
     """Main function"""
     logging.info("Construction parser")
@@ -63,6 +79,11 @@ def main():
     get_parser = subparsers.add_parser("get", help="Get a snippet")
     get_parser.add_argument("name", help="Name of the snippet")
     
+    # Subparser for the search command
+    logging.debug("Constructing search subparser")
+    search_parser = subparsers.add_parser("search", help="Search for message content")
+    search_parser.add_argument("name", help="Use portion of snippet message to find snippet keyword and message")
+    
     arguments = parser.parse_args()
     # Convert parsed arguments from Namespace to dictionary
     arguments = vars(arguments)
@@ -75,6 +96,18 @@ def main():
     elif command == "get":
         snippet = get(**arguments)
         print("Retrieved snippet: {!r}".format(snippet))
+    elif command == "search":
+        names = search(**arguments)
+        print("search results:")
+        for name in names:
+            print(name[0] + " " + name[1])
+    else:
+        snippets = catalog(**arguments)
+        print ("current snippets keywords:")
+        for snippet in snippets:
+            print (snippet[0])
+        
+    
     
 if __name__ == "__main__":
     main()
